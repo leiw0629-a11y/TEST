@@ -249,42 +249,37 @@ function renderSubjectDropdowns() {
  * 1. 喂养/惩罚: 可用积分 (currentPoints) 与 总积分 (accumulatedPoints) 同步增加或减少。
  * 2. 商城兑换: 仅扣除 可用积分，总积分 保持不动。
  */
+// [script.js] 替换原有的 addPoints 函数
+
 function addPoints(studentIndex, score, subject, dateStr, isDirectPoints = false) {
     const student = students[studentIndex];
     let pointsChange = 0;
     let expChange = 0;
     let recordScore = 0; 
 
-    // --- 第一步：计算分值变动 ---
+    // --- 第一步：计算分值变动 (保持不变) ---
     if (isDirectPoints) {
-        // 商城模式：直接使用分值（通常是负数）
         pointsChange = parseInt(score); 
         expChange = 0; 
         recordScore = pointsChange;
     } else {
-        // 喂养/惩罚模式：根据倍率换算
         const rawScore = parseInt(score);
         recordScore = rawScore;
         pointsChange = Math.floor(rawScore * CONFIG.pointRate);
-        
-        // 正分给经验，负分（惩罚）不扣经验
         expChange = (rawScore > 0) ? Math.floor(rawScore * CONFIG.expRate) : 0;
     }
 
-    // --- 第二步：更新 可用积分 (无论哪种模式，这里都要动) ---
+    // --- 第二步：更新 可用积分 (保持不变) ---
     if(student.currentPoints === undefined) student.currentPoints = 0;
     student.currentPoints += pointsChange; 
 
-    // --- 第三步：更新 累计总积分 (仅限喂养/惩罚模式) ---
+    // --- 第三步：更新 累计总积分 (保持不变) ---
     if(student.accumulatedPoints === undefined) student.accumulatedPoints = 0;
-    
-    // 逻辑：如果是非直接操作（喂养/惩罚），可用积分和总积分一起动
-    // 逻辑：如果是直接操作（商城兑换），总积分不动，实现兑换不扣总分
     if (!isDirectPoints) {
         student.accumulatedPoints += pointsChange; 
     }
 
-    // --- 第四步：更新经验和等级 ---
+    // --- 第四步：更新经验和等级 (保持不变) ---
     if (expChange > 0) {
         student.exp += expChange;
         student.totalPoints = (student.totalPoints || 0) + expChange;
@@ -295,16 +290,24 @@ function addPoints(studentIndex, score, subject, dateStr, isDirectPoints = false
         }
     }
 
-    // --- 第五步：写入日志 (确保撤销逻辑有据可查) ---
-    const formattedTime = formatAnyTime(dateStr || new Date());
+    // --- 第五步：写入日志 (这里是核心修改点！) ---
+    
+    // 1. 系统录入时间：永远记录“此时此刻” (用于追溯是谁什么时候操作的)
+    const systemTime = formatAnyTime(new Date());
+    
+    // 2. 归属日期：使用传入的 dateStr (也就是界面上选择的日期)
+    // 如果没传，就默认归属到今天
+    // dateStr 格式通常是 "2026-01-20"，非常规范
+    const attributionDate = dateStr || new Date().toISOString().split('T')[0];
+
     historyData.unshift({
-        time: formattedTime, 
+        time: systemTime,        // 改动：存入系统当前操作时间
+        targetDate: attributionDate, // 新增：存入你选择的“昨天/今天”
         name: student.name,
         subject: subject,
         score: recordScore, 
         expChange: expChange,
         pointsChange: pointsChange,
-        // 只有商城模式产生的负分才标记为 isExchange
         isExchange: isDirectPoints && pointsChange < 0, 
         revoked: false
     });
