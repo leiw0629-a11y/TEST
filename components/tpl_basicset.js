@@ -122,11 +122,12 @@ window.AppTemplates.basicSet = `
                 💡 注意：修改这里的数字，现有学生等级不会自动变哦。建议定好了就别改了哈。
             </div>
             <div class="v2-cfg-hint-right">
-                注：每行代表一个选项，将自动出现在加扣分列表中。
+                注：输入框里一行写一个科目。<br>科目胶囊点一下就能直接改名，点×就是删除。
             </div>
         </div>
 
         <div class="v2-cfg-footer">
             <button class="btn-submit" style="margin:0; width: 220px;" onclick="BasicConfigHandler.save()">应用并保存</button>
         </div>
+
     </div> </div> `;
