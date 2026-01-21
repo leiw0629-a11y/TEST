@@ -43,7 +43,15 @@ window.AppTemplates.misc = `
     请选择科目并输入分值
 </div>
             </div>
-
+<div style="text-align: center; margin-top: -10px;">
+                <div style="display: inline-flex; align-items: center; background: #FFFFFF; padding: 6px 15px; border-radius: 20px; border: 1px solid #FFE0B2;">
+                    <span style="font-size: 14px; margin-right: 8px;">📅</span>
+                    <input type="date" id="singleFeedDate" 
+       onclick="try{this.showPicker()}catch(e){}"
+       style="border: none; background: transparent; color: #E65100; font-weight: bold; font-family: inherit; font-size: 14px; outline: none; cursor: pointer; width: 110px;">
+                </div>
+                <div style="font-size:10px; color:#ccc; margin-top:4px;">(默认为今天，点击可补录旧日期)</div>
+            </div>
             <button class="btn-submit" onclick="submitSingleFeed()" title="快捷键: Enter (回车)"
                     style="height: 44px; font-size: 16px; box-shadow: 0 4px 12px rgba(255,107,107,0.3);">
                 确认投喂
@@ -87,6 +95,12 @@ window.AppTemplates.misc = `
                     <div style="display: flex; align-items: center; background: #FAFAFA; padding: 4px 12px; border-radius: 8px; border: 1px solid #EEE;">
                         <span style="font-size: 12px; color: #8D6E63; margin-right: 6px;">当前选中:</span>
                         <span id="selectedBatchSubjectLabel" style="font-weight: bold; font-size: 15px; color: #E65100;">请选择科目</span>
+                    </div>
+					<div style="display: flex; align-items: center; background: #fff; padding: 4px 12px; border-radius: 8px; border: 1px solid #E0E0E0; margin-left: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <span style="font-size: 12px; color: #E65100; margin-right: 6px; font-weight:bold;">📅 归属:</span>
+                        <input type="date" id="batchFeedDate" 
+                               onclick="try{this.showPicker()}catch(e){}"
+                               style="border: none; background: transparent; color: #E65100; font-family: inherit; outline: none; font-size: 13px; width: 105px; cursor: pointer; font-weight: bold;">
                     </div>
                     <button class="btn-submit" onclick="submitBatchFeed()" title="快捷键: Ctrl + Enter (提交)" style="width: auto; height: 34px; padding: 0 20px; font-size: 14px; margin-top: 0; margin-left: auto; box-shadow: 0 3px 8px rgba(255,107,107,0.3);">
                         确认录入
