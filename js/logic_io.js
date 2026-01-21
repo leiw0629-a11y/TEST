@@ -137,6 +137,18 @@ if (data.subjects && Array.isArray(data.subjects)) {
             students.push(...data.students); 
             
             historyData.length = 0; 
+			// 可以删除
+			// 遍历一下导入的数据，如果发现没有 targetDate，就借用 time 里的日期
+const safeHistory = data.history.map(item => {
+    // 如果 item.targetDate 不存在，就截取 item.time 的前10位 (2026-01-20)
+    // 注意：这里假设 time 是标准格式字符串
+    if (!item.targetDate && item.time) {
+        item.targetDate = item.time.split(' ')[0]; 
+    }
+    return item;
+});
+// 删除结束
+			
             historyData.push(...data.history);
 
             // 3. 刷新界面流程
