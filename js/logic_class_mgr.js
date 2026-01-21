@@ -107,7 +107,7 @@ function doCreateClass() {
 
     const existingClasses = getUniqueClassNames();
     if (existingClasses.includes(className)) {
-        return alert(`❌ 【${className}】已存在！\n请直接在列表点击该班级的【🎓 学生】按钮进行管理。`);
+        return alert(`❌ 【${className}】已存在！\n请直接在列表点击该班级的【🎓学生】按钮进行管理。`);
     }
     
     const rawText = listInput.value.trim();
@@ -163,22 +163,31 @@ function doCreateClass() {
     if(firstTab) switchMgrTab('class-list', firstTab);
 }
 
-/**
- * 删除班级
- */
 function deleteClass(name) {
-    if(!confirm(`⚠️ 确定要解散【${name}】吗？\n\n这将删除该班级下的所有学生数据！`)) return;
+    if(!confirm(`⚠️ 确定要解散【${name}】吗？\n\n这将删除该班级下的所有学生数据及其历史记录！`)) return;
     
+    // 1. 找到该班级所有学生的名字列表
+    const classStudentNames = students
+        .filter(s => s.className === name)
+        .map(s => s.name);
+
     const initialCount = students.length;
+    
+    // 2. 删除学生档案
     students = students.filter(s => s.className !== name);
     const deletedCount = initialCount - students.length;
+
+    // 3. 【新增】批量删除这些学生的历史记录
+    if (classStudentNames.length > 0) {
+        historyData = historyData.filter(record => !classStudentNames.includes(record.name));
+    }
 
     saveData();
     renderClassListTable();
     refreshUI();
-	// 👇 新增这一行：删除班级后，更新下拉框(去掉已删的)
+    
     if(window.InitClassOptions) window.InitClassOptions();
-    showToast(`🗑️ 已解散班级，删除了 ${deletedCount} 名学生`);
+    showToast(`🗑️ 已解散班级，清理了 ${deletedCount} 人及其历史数据`);
 }
 
 /**
@@ -189,7 +198,7 @@ function openStudentMgr(className) {
     showSubView('view-student-mgr');
     
     const titleEl = document.querySelector('#view-student-mgr .panel-header-area div[style*="font-weight:bold"]');
-    if(titleEl) titleEl.innerHTML = `🎓 ${className} 名单`;
+    if(titleEl) titleEl.innerHTML = `${className}`;
     
     renderStudentMgrTable();
 }
@@ -210,7 +219,8 @@ function renderStudentMgrTable() {
             <td style="font-weight:bold; font-size: 13px;">${stu.name}</td>
             <td>${stu.groupName ? `<span class="status-tag mid">${stu.groupName}</span>` : '<span class="status-tag">未分组</span>'}</td>
             <td>
-                <button class="action-btn" onclick="removeStudent('${stu.name}')" style="color:red; background:#FFF0F0;">移除</button>
+                <button class="action-btn" onclick="openRenameModal('${stu.name}')" style="color:#1976D2; background:#E3F2FD; margin-right:5px;">改名</button>
+<button class="action-btn" onclick="removeStudent('${stu.name}')" style="color:red; background:#FFF0F0;">移除</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -218,18 +228,96 @@ function renderStudentMgrTable() {
 }
 
 /**
- * 移除学生
+ * 打开改名弹窗
+ */
+function openRenameModal(oldName) {
+    targetRenameName = oldName; // 记录当前要改谁
+    
+    // 填充 UI
+    document.getElementById('rename-old-name-display').innerText = oldName;
+    const input = document.getElementById('renameInput');
+    input.value = oldName; // 默认填入旧名字方便修改
+    
+    // 显示弹窗
+    document.getElementById('modal-rename-student').style.display = 'flex';
+    
+    // 自动聚焦输入框 (体验优化)
+    setTimeout(() => input.focus(), 100);
+}
+
+/**
+ * 提交改名 (包含查重和历史记录更新)
+ */
+function submitRename() {
+    const input = document.getElementById('renameInput');
+    const newName = input.value.trim();
+    const oldName = targetRenameName;
+
+    // 1. 基础校验
+    if (!newName) return alert("❌ 名字不能为空");
+    if (newName === oldName) {
+        document.getElementById('modal-rename-student').style.display = 'none';
+        return;
+    }
+
+    // 2. 查重 (全局检查)
+    const exists = students.some(s => s.name === newName);
+    if (exists) {
+        alert(`❌ 改名失败！\n学生【${newName}】已存在，名字不能重复。`);
+        return; // 不关闭弹窗，让用户继续改
+    }
+
+    // 3. 更新学生档案
+    const targetStudent = students.find(s => s.name === oldName);
+    if (!targetStudent) return alert("❌ 档案未找到，请刷新重试");
+    targetStudent.name = newName;
+
+    // 4. 更新历史记录 (核心步骤)
+    let historyCount = 0;
+    historyData.forEach(record => {
+        if (record.name === oldName) {
+            record.name = newName;
+            historyCount++;
+        }
+    });
+
+    // 5. 保存与刷新
+    saveData();
+    renderStudentMgrTable(); // 刷新列表表格
+    refreshUI();             // 刷新主界面
+    
+    // 6. 关闭弹窗并提示
+    document.getElementById('modal-rename-student').style.display = 'none';
+    showToast(`✅ 改名成功！\n档案及 ${historyCount} 条历史已更新`);
+}
+
+/**
+ * 移除学生（修正版：同时删除历史记录）
  */
 function removeStudent(name) {
-    if(!confirm(`⚠️ 确定要将【${name}】从【${currentMgrClassName}】移除吗？\n\n删除后数据无法恢复！`)) return;
+    // 1. 确认删除
+    if(!confirm(`⚠️ 确定要将【${name}】从【${currentMgrClassName}】移除吗？\n\n注意：这将彻底删除该生的档案以及所有历史积分记录！`)) return;
 
+    // 2. 查找学生索引
     const idx = students.findIndex(s => s.name === name && s.className === currentMgrClassName);
+    
     if(idx !== -1) {
+        // 3. 删除学生档案
         students.splice(idx, 1);
+        
+        // 4. 【新增】删除该生的所有历史记录
+        // 引用全局变量 historyData
+        // 过滤掉所有名字匹配的记录
+        const initialHistoryLen = historyData.length;
+        historyData = historyData.filter(record => record.name !== name);
+        const deletedHistoryCount = initialHistoryLen - historyData.length;
+
+        // 5. 保存并刷新
         saveData();
         renderStudentMgrTable(); 
         refreshUI();             
-        showToast("🗑️ 学生档案已销毁");
+        
+        showToast(`🗑️ 已删除档案及 ${deletedHistoryCount} 条历史记录`);
     }
 }
 
