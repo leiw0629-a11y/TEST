@@ -205,6 +205,7 @@ function _renderLeftPanel(student, pet, percent, rankStr, goodCount, badCount) {
 
 /**
  * 渲染右侧：历史记录面板 (Layer 1)
+ * 修改：仅展示 targetDate (记分日期)，保持原有字体风格
  */
 function _renderHistoryPanel(historyWithIdx) {
     let historyRows = historyWithIdx.map(h => {
@@ -213,8 +214,13 @@ function _renderHistoryPanel(historyWithIdx) {
         if (eChange === undefined) eChange = (pChange > 0) ? pChange : 0;
         
         const color = pChange >= 0 ? '#2E7D32' : '#C62828';
-        const timeParts = h.time.split(' ');
-        const timeDisplay = `<div style="font-size:12px; color:#666;">${timeParts[0]}</div><div style="font-size:10px; color:#999;">${timeParts[1] || ''}</div>`;
+        
+        // -----------------------------------------------------
+        // 核心修改：只获取日期字符串
+        // -----------------------------------------------------
+        // 优先使用 targetDate (记分日期)，如果没有则截取 time 的日期部分
+        const rawDate = h.time.split(' ')[0];
+        const displayDate = h.targetDate || rawDate;
 
         let changeHtml = '';
         if(eChange > 0) changeHtml += `<div style="font-size:11px; color:#795548;">Exp+${eChange}</div>`;
@@ -228,7 +234,9 @@ function _renderHistoryPanel(historyWithIdx) {
 
         return `
         <tr style="border-bottom: 1px dashed #FFEEE4; ${rowStyle}">
-            <td style="padding: 10px 6px; text-align:center;">${timeDisplay}</td>
+            <td style="padding: 10px 6px; text-align:center;">
+                <div style="font-size:12px; color:#666;">${displayDate}</div>
+            </td>
             <td style="padding: 10px 6px; text-align:center; font-size:14px; color:#5D4037;">${h.subject}</td>
             <td style="padding: 10px 6px; text-align:center;">${changeHtml}</td>
             <td style="padding: 10px 6px; text-align:center;">${actionHtml}</td>
@@ -236,6 +244,8 @@ function _renderHistoryPanel(historyWithIdx) {
     }).join('');
 
     if(!historyRows) historyRows = '<tr><td colspan="4" style="text-align:center; color:#ccc; padding:40px;">暂无喂养记录</td></tr>';
+    
+    // 保持原来的无表头结构
     const tableHtml = `<table style="width:100%; border-collapse: collapse;"><tbody>${historyRows}</tbody></table>`;
 
     return `
