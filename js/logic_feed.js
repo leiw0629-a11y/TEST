@@ -30,6 +30,14 @@ function openSingleFeed(name) {
     setTimeout(() => {
         if(scoreInput) scoreInput.focus();
     }, 100);
+	
+	// --- 新增：初始化日期选择器 ---
+    const dateInput = document.getElementById('singleFeedDate');
+    if(dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today; // 默认显示今天
+        dateInput.max = today;   // 不允许选未来
+    }
 }
 
 /**
@@ -289,12 +297,14 @@ function submitSingleFeed() {
     const finalScore = (currentSingleSubData.type === -1) ? -rawVal : rawVal;
 
     // 获取当前时间
-    const now = new Date(); 
-
+// 获取选中的归属日期
+    const dateInput = document.getElementById('singleFeedDate');
+    const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+	
     const oldLevel = students[idx].level;
     
     // 调用核心加分函数
-    addPoints(idx, finalScore, currentSingleSubData.name, now); 
+    addPoints(idx, finalScore, currentSingleSubData.name, targetDate);
     
     // 升级检测
     if (students[idx].level > oldLevel) showLevelUpModal(idx);
@@ -314,7 +324,13 @@ function submitSingleFeed() {
  */
 function openBatchModal() {
     if (students.length === 0) return alert("请先导入名单");
-    
+    const dateInput = document.getElementById('batchFeedDate');
+	
+    if(dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today; // 默认显示今天
+        dateInput.max = today;   // 不允许选未来
+    }
     const classSelect = document.getElementById('classSelect'); 
     const selectedClass = classSelect ? classSelect.value : 'all';
 
@@ -430,7 +446,7 @@ function handleBatchSubjectClick(name, type) {
     const todayStr = new Date().toISOString().split('T')[0]; 
     const label = document.getElementById('selectedBatchSubjectLabel');
     if(label) {
-        label.innerHTML = `${name} ${type == 1 ? '(加分)' : '(扣分)'} <span style="font-size:12px; color:#999; margin-left:8px; font-weight:normal;">📅 ${todayStr}</span>`;
+        label.innerHTML = `${name} ${type == 1 ? '(加分)' : '(扣分)'}`;
         label.style.color = (type == 1) ? '#2E7D32' : '#C62828';
     }
 
@@ -477,7 +493,12 @@ function submitBatchFeed() {
     if (!currentBatchSubData) return alert("请先选择科目！");
 
     const inputs = document.querySelectorAll('.score-input');
-    const batchTime = new Date(); 
+    // 获取选中的归属日期
+    const dateInput = document.getElementById('batchFeedDate');
+    const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    
+    // ...
+   
     
     let count = 0; 
     let levelUpCount = 0;
@@ -491,7 +512,8 @@ function submitBatchFeed() {
                 let rawVal = Math.abs(parseInt(inp.value));
                 let finalScore = (currentBatchSubData.type == -1) ? -rawVal : rawVal;
 
-                addPoints(idx, finalScore, currentBatchSubData.name, batchTime); 
+                 // 在循环内部调用 addPoints
+    addPoints(idx, finalScore, currentBatchSubData.name, targetDate);
                 count++; 
                 if (students[idx].level > oldLevel) levelUpCount++;
             }
